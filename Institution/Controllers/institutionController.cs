@@ -8,6 +8,7 @@ using InstitutionAPI.bll.Services;
 using InstitutionAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace InstitutionAPI.Controllers
 {
@@ -16,10 +17,12 @@ namespace InstitutionAPI.Controllers
     public class institutionController : ControllerBase
     {
         private readonly institutionContextService _context;
-        private institutionMap institutionmapper;
-        public institutionController(institutionContext context)
+        private readonly institutionMap institutionmapper;
+        private readonly ILogger<institutionController> _logger;
+        public institutionController(institutionContext context, ILogger<institutionController> logger)
         {
             _context = new institutionContextService(context);
+            _logger = logger;
         }
 
         [HttpGet]
@@ -34,8 +37,9 @@ namespace InstitutionAPI.Controllers
         {
             var institution = await _context.Find(institutionId);
 
-            if (institution == null)
+            if (institution.Value == null)
             {
+                _logger.LogInformation(NotFound().ToString() + "|| Time Accessed : " + DateTime.Now + "|| Accessed by : " + Environment.UserName);
                 return NotFound();
             }
 
@@ -75,6 +79,7 @@ namespace InstitutionAPI.Controllers
             bool creationState = _context.Add(inst);
             if(creationState == true)
             {
+                _logger.LogInformation(Created(nameof(GetInstitution), inst).ToString() + "|| Time Accessed : " + DateTime.Now + "|| Accessed by : " + Environment.UserName);
                 return Created(
                 nameof(GetInstitution),
                 inst);
@@ -90,11 +95,13 @@ namespace InstitutionAPI.Controllers
 
             if (institution == null)
             {
+                _logger.LogInformation(NotFound().ToString() + "|| Time Accessed : " + DateTime.Now + "|| Accessed by : " + Environment.UserName);
                 return NotFound();
             }
 
             _context.Remove(institution);
             await _context.SaveChangesAsync();
+            _logger.LogInformation(institution.Value.Code.ToString() + "|| Time Accessed : " + DateTime.Now + "|| Accessed by : " + Environment.UserName);
 
             return NoContent();
         }
